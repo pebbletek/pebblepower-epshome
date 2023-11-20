@@ -1,3 +1,5 @@
+#ESPHome Base Configuration for PebblePower1
+
 substitutions:
   device_name: pebblepower1
   friendly_name: PebblePower1
