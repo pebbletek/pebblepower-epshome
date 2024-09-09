@@ -84,6 +84,24 @@ The default firmware utilises all of the above in its simplest form but its impo
 
 PebblePower devices are ESP32 based and there are different firmware projects available depending on the use case. This specific project uses ESPHome for firmware development. Make sure you have ESPHome installed and configured properly before making any changes.
 
+## Logging
+
+To enable debug logging you can add the following to your PebblePower_uniquename.yaml file:
+```
+logger:
+  level: DEBUG
+```
+You can also connected wirelessly to your device and use the esphome CLI to get serial logging.
+```
+esphome logs PebblePower_uniquename.yaml
+
+or 
+
+esphome logs --device 192.168.1.xxx PebblePower_uniquename.yaml
+```
+
+
+
 ### Contributing
 
 1. Fork the repository
