@@ -1,0 +1,19 @@
+### Onboard button names
+# The default configuration uses the Channel Names.
+# If you require unique board button names, uncomment the selected below that match your
+# PebblePower model. You will also need to comment and uncomment code elements 
+# in the "Board Buttons" section
+
+substitutions:
+  # CH1_button_name: Relay CH1 Button
+  # CH2_button_name: Relay CH2 Button
+  # CH3_button_name: Relay CH3 Button
+  # CH4_button_name: Relay CH4 Button
+  # CH5_button_name: Relay CH5 Button
+  # CH6_button_name: Relay CH6 Button
+  # CH7_button_name: Relay CH7 Button
+  # CH8_button_name: Relay CH8 Button
+  # CH9_button_name: Relay CH9 Button
+  # CH10_button_name: Relay CH10 Button
+  # CH11_button_name: Relay CH11 Button
+  # CH12_button_name: Relay CH12 Button

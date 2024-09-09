@@ -1,0 +1,20 @@
+### Define external button names
+# The default configuration uses the Channel Names.
+# If you require unique external button names, uncomment the selected below that match your
+# PebblePower model. You will also need to comment and uncomment code elements 
+# in the "External Buttons" section
+
+substitutions:
+
+  # CH1_ext_name: Relay CH1 Ext Button
+  # CH2_ext_name: Relay CH2 Ext Button
+  # CH3_ext_name: Relay CH3 Ext Button
+  # CH4_ext_name: Relay CH4 Ext Button
+  # CH5_ext_name: Relay CH5 Ext Button
+  # CH6_ext_name: Relay CH6 Ext Button
+  # CH7_ext_name: Relay CH7 Ext Button
+  # CH8_ext_name: Relay CH8 Ext Button
+  # CH9_ext_name: Relay CH9 Ext Button
+  # CH10_ext_name: Relay CH10 Ext Button
+  # CH11_ext_name: Relay CH11 Ext Button
+  # CH12_ext_name: Relay CH12 Ext Button

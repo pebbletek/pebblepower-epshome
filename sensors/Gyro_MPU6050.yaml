@@ -1,0 +1,226 @@
+  ### Gyro Sensor MPU6050
+  # Below are the setting for the MPU6050 Gyro sensor that provide realtime leveling
+  # and G force metrics. These modules are used for leveling, vibration sensing and 
+  # providing logging of metrics and powering alerting
+
+substitutions:
+  delta_accel_x: '0.1'
+  delta_accel_y: '0.1'
+  delta_accel_z: '0.1'
+  delta_gyro_x: '0.5'
+  delta_gyro_y: '0.5'
+  delta_gyro_z: '0.5'
+
+  icon: "mdi:switch"
+
+globals:
+  - id: ax_offset
+    type: float
+    initial_value: '0.0'
+  - id: ay_offset
+    type: float
+    initial_value: '0.0'
+  - id: az_offset
+    type: float
+    initial_value: '0.0'
+  - id: gx_offset
+    type: float
+    initial_value: '0.0'
+  - id: gy_offset
+    type: float
+    initial_value: '0.0'
+  - id: gz_offset
+    type: float
+    initial_value: '0.0'
+
+script:
+  # This script is used to calibrate the MPU6050 sensor. Its intended use is that when
+  # the device have been installed in a fixed location in the vehicle or machine and 
+  # the user is happy with the X and Y level then the user can press the FUNC button
+  # twice, or click the "Calibrate" button in the Web UI to set the baseline level. 
+  # The metrics will then provide degrees as a delta from the user baseline and the 
+  # baseline is stored in non-volitile RAM so its persisted between reboots.
+  - id: calibrate_mpu6050
+    mode: queued
+    then:
+      - logger.log: "Starting calibration..."
+      - lambda: |-
+          // Perform a calibration routine with stability checks
+          float ax_sum = 0.0;
+          float ay_sum = 0.0;
+          float az_sum = 0.0;
+          float gx_sum = 0.0;
+          float gy_sum = 0.0;
+          float gz_sum = 0.0;
+          const int samples = 200;
+          ESP_LOGD("calibration", "Collecting %d samples for calibration...", samples);
+
+          for (int i = 0; i < samples; i++) {
+            // Collect raw sensor readings
+            ax_sum += id(accel_x).state;
+            ay_sum += id(accel_y).state;
+            az_sum += id(accel_z).state;
+            gx_sum += id(gyro_x).state;
+            gy_sum += id(gyro_y).state;
+            gz_sum += id(gyro_z).state;
+
+            delay(10);
+          }
+
+          // Calculate offsets to set the stationary readings to zero
+          id(ax_offset) = -ax_sum / samples;
+          id(ay_offset) = -ay_sum / samples;
+          id(az_offset) = -az_sum / samples;
+          id(gx_offset) = -gx_sum / samples;
+          id(gy_offset) = -gy_sum / samples;
+          id(gz_offset) = -gz_sum / samples;
+
+          ESP_LOGD("calibration", "Calibration complete. Offsets set:");
+          ESP_LOGD("calibration", "ax_offset: %f, ay_offset: %f, az_offset: %f", id(ax_offset), id(ay_offset), id(az_offset));
+          ESP_LOGD("calibration", "gx_offset: %f, gy_offset: %f, gz_offset: %f", id(gx_offset), id(gy_offset), id(gz_offset));
+
+      - logger.log: "Calibration process completed."
+      - lambda: |-
+          id(template_sensor_2).publish_state(false);
+      - logger.log: "Function 2 sensor reset to OFF after calibration."
+  
+button:
+  - platform: template
+    name: "Calibrate MPU6050"
+    id: calibrate_button
+    on_press:
+      - logger.log: "Manual Calibration Triggered via Web UI"
+      - script.execute: calibrate_mpu6050
+
+esphome:
+
+  on_boot:
+    priority: -100
+    then:
+      - lambda: |-
+          if (id(ax_offset) == 0.0 && id(ay_offset) == 0.0 && id(az_offset) == 0.0 &&
+              id(gx_offset) == 0.0 && id(gy_offset) == 0.0 && id(gz_offset) == 0.0) {
+            ESP_LOGD("calibration", "Performing initial calibration...");
+            id(calibrate_mpu6050).execute();
+          }
+# This is used to reduce the noise from the MPU6050 sensor. without this the logs are
+# filled with MPU6050 sensor data which is not useful.
+logger:
+  logs:
+    # Reduce the noise from the MPU6050 sensor
+    mpu6050: INFO
+
+binary_sensor:
+# Function Button (FUNC) with double press to trigger calibration
+  - platform: gpio
+    pin:
+      number: 5
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    name: "${friendly_name} Function Button"
+    id: func_button
+    filters:
+      - delayed_on_off: 80ms # Debounce filter to eliminate random false switching
+    on_multi_click:
+      - timing:
+          - ON for at most 0.5s
+          - OFF for at least 0.5s
+        then:
+          - logger.log: "Single Click Detected"
+          - lambda: |-
+              id(template_sensor_1).publish_state(!id(template_sensor_1).state);
+
+      - timing:
+          - ON for at most 0.5s
+          - OFF for at most 0.5s
+          - ON for at most 0.5s
+          - OFF for at least 0.5s
+        then:
+          - logger.log: "Double Click Detected - Starting Calibration"
+          - lambda: |-
+              id(template_sensor_2).publish_state(true);
+              id(calibrate_mpu6050).execute();
+
+      - timing:
+          - ON for at most 0.5s
+          - OFF for at most 0.5s
+          - ON for at most 0.5s
+          - OFF for at most 0.5s
+          - ON for at most 0.5s
+          - OFF for at least 0.2s
+        then:
+          - logger.log: "Triple Click Detected"
+          - lambda: |-
+              id(template_sensor_3).publish_state(!id(template_sensor_3).state);
+
+  - platform: template
+    name: "Function 1 ${friendly_name}"
+    id: template_sensor_1
+  - platform: template
+    name: "Function 2 ${friendly_name}"
+    id: template_sensor_2
+  - platform: template
+    name: "Function 3 ${friendly_name}"
+    id: template_sensor_3
+
+sensor:
+  - platform: mpu6050
+    i2c_id: i2c_internal
+    address: 0x68
+    update_interval: 1s
+    accel_x:
+      name: "MPU6050 Accel X"
+      id: accel_x
+      filters:
+        - lambda: return x + id(ax_offset);
+        - sliding_window_moving_average:
+            window_size: 10
+            send_every: 1
+        - delta: ${delta_accel_x}
+    accel_y:
+      name: "MPU6050 Accel Y"
+      id: accel_y
+      filters:
+        - lambda: return x + id(ay_offset);
+        - sliding_window_moving_average:
+            window_size: 10
+            send_every: 1
+        - delta: ${delta_accel_y}
+    accel_z:
+      name: "MPU6050 Accel Z"
+      id: accel_z
+      filters:
+        - lambda: return x + id(az_offset);
+        - sliding_window_moving_average:
+            window_size: 10
+            send_every: 1
+        - delta: ${delta_accel_z}
+    gyro_x:
+      name: "MPU6050 Gyro X"
+      id: gyro_x
+      filters:
+        - lambda: return x + id(gx_offset);
+        - sliding_window_moving_average:
+            window_size: 10
+            send_every: 1
+        - delta: ${delta_gyro_x}
+    gyro_y:
+      name: "MPU6050 Gyro Y"
+      id: gyro_y
+      filters:
+        - lambda: return x + id(gy_offset);
+        - sliding_window_moving_average:
+            window_size: 10
+            send_every: 1
+        - delta: ${delta_gyro_y}
+    gyro_z:
+      name: "MPU6050 Gyro Z"
+      id: gyro_z
+      filters:
+        - lambda: return x + id(gz_offset);
+        - sliding_window_moving_average:
+            window_size: 10
+            send_every: 1
+        - delta: ${delta_gyro_z}

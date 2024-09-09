@@ -1,0 +1,693 @@
+# substitutions: !include options.yaml
+substitutions:
+  device_name: pebblepower8
+  friendly_name: PebblePower8
+  mac: 496a44
+  icon: "mdi:switch"
+  current_delta: "0.01"  # Default delta for current sensors
+  power_delta: "0.1"      # Default delta for power sensors
+  voltage_delta: "0.1"  # Default delta for voltage sensors
+  debounce_time: "50ms" # Default debounce time for binary sensors
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  name_add_mac_suffix: true
+  project:
+    name: "PebbleTek.PebblePower8"
+    version: "1.0.0"
+  
+  on_boot:
+    # Actions with higher priority (closer to 0) should be first
+    priority: -100  # Set the lowest priority for this overall on_boot sequence
+    then:
+      # First block of actions (higher priority tasks)
+      - light.turn_on:
+          id: led_array
+          brightness: 25%  # Set the default brightness
+          effect: "Relay Channel and WiFi Status Effect"  # Set the default effect
+
+
+esp32:
+  board: "esp32-c6-devkitc-1"
+  variant: "ESP32C6"
+  flash_size: 4MB
+  framework:
+    platform_version: 6.6.0
+    sdkconfig_options:
+      CONFIG_ESPTOOLPY_FLASHSIZE_4MB: y
+      CONFIG_OPENTHREAD_ENABLED: n
+      CONFIG_ENABLE_WIFI_STATION: y
+      CONFIG_USE_MINIMAL_MDNS: y
+    type: esp-idf
+    version: 5.2.1
+
+logger:
+
+light:
+  - platform: esp32_rmt_led_strip
+    pin: 4
+    num_leds: 9
+    rmt_channel: 0
+    chipset: ws2812
+    name: "PebblePower LED Array"
+    rgb_order: GRB
+    id: led_array
+    # restore_mode: ALWAYS_ON  # Ensure the light is always on after a reboot
+    effects:
+      - addressable_lambda:
+          name: "Relay Channel and WiFi Status Effect"
+          update_interval: 50ms
+          lambda: |-
+            // Handle Relay States
+            if (id(CH1_relay).state) {
+              it[0] = esphome::Color(0, 255, 0);  // GREEN
+            } else {
+              it[0] = esphome::Color(0, 0, 0);  // OFF
+            }
+            if (id(CH2_relay).state) {
+              it[1] = esphome::Color(0, 255, 0);  // GREEN
+            } else {
+              it[1] = esphome::Color(0, 0, 0);  // OFF
+            }
+            if (id(CH3_relay).state) {
+              it[2] = esphome::Color(0, 255, 0);  // GREEN
+            } else {
+              it[2] = esphome::Color(0, 0, 0);  // OFF
+            }
+            if (id(CH4_relay).state) {
+              it[3] = esphome::Color(0, 255, 0);  // GREEN
+            } else {
+              it[3] = esphome::Color(0, 0, 0);  // OFF
+            }
+            if (id(CH5_relay).state) {
+              it[4] = esphome::Color(0, 255, 0);  // GREEN
+            } else {
+              it[4] = esphome::Color(0, 0, 0);  // OFF
+            }
+            if (id(CH6_relay).state) {
+              it[5] = esphome::Color(0, 255, 0);  // GREEN
+            } else {
+              it[5] = esphome::Color(0, 0, 0);  // OFF
+            }
+            if (id(CH7_relay).state) {
+              it[6] = esphome::Color(0, 255, 0);  // GREEN
+            } else {
+              it[6] = esphome::Color(0, 0, 0);  // OFF
+            }
+            if (id(CH8_relay).state) {
+              it[7] = esphome::Color(0, 255, 0);  // GREEN
+            } else {
+              it[7] = esphome::Color(0, 0, 0);  // OFF
+            }
+
+            // Handle WiFi status (pixel 8)
+            if (id(wifi_component).is_connected()) {
+              it[8] = esphome::Color(0, 0, 255);  // BLUE when WiFi is connected
+            } else {
+              it[8] = esphome::Color(255, 0, 0);  // RED when WiFi is disconnected
+            }
+
+api:
+  encryption:
+    key: !secret api_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  id: wifi_component
+  ap:
+    ssid: ${device_name}
+    password: "12345678"
+
+mqtt:
+  broker: "splunk"  # Replace with your MQTT broker's IP address
+  # username: "your_mqtt_username"  # Replace with your MQTT username
+  # password: "your_mqtt_password"  # Replace with your MQTT password
+  
+
+captive_portal:
+
+web_server:
+  port: 80
+  version: 2
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+i2c:
+  - id: i2c_internal
+    sda: 2
+    scl: 3
+    scan: true
+
+  - id: i2c_external
+    sda: 6
+    scl: 7
+    scan: true
+
+mcp23017:
+  - id: 'mcp23017_hub'
+    i2c_id: i2c_internal
+    address: 0x20
+
+switch:
+  # Relays for all 8 channels using GPIO emulation from MCP23017
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      number: 22
+      mode:
+        output: true
+      inverted: false
+    id: CH1_relay
+    name: ${friendly_name} Relay CH1
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON  # Restore the relay's last state
+
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      number: 23
+      mode:
+        output: true
+      inverted: false
+    id: CH2_relay
+    name: ${friendly_name} Relay CH2
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON  # Restore the relay's last state
+
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      number: 15
+      mode:
+        output: true
+      inverted: false
+    id: CH3_relay
+    name: ${friendly_name} Relay CH3
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON  # Restore the relay's last state
+
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      number: 1
+      mode:
+        output: true
+      inverted: false
+    id: CH4_relay
+    name: ${friendly_name} Relay CH4
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON  # Restore the relay's last state
+
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 0
+      mode:
+        output: true
+      inverted: false
+    id: CH5_relay
+    name: ${friendly_name} Relay CH5
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON  # Restore the relay's last state
+
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 1
+      mode:
+        output: true
+      inverted: false
+    id: CH6_relay
+    name: ${friendly_name} Relay CH6
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON  # Restore the relay's last state
+
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 2
+      mode:
+        output: true
+      inverted: false
+    id: CH7_relay
+    name: ${friendly_name} Relay CH7
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON  # Restore the relay's last state
+
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 3
+      mode:
+        output: true
+      inverted: false
+    id: CH8_relay
+    name: ${friendly_name} Relay CH8
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON  # Restore the relay's last state
+
+binary_sensor:
+  # PCB Buttons for all 8 channels using GPIO emulation from MCP23017
+  - platform: gpio
+    pin:
+      number: 8
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    name: ${friendly_name} Relay Button CH1
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH1_relay
+
+  - platform: gpio
+    pin:
+      number: 10
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    name: ${friendly_name} Relay Button CH2
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH2_relay
+
+  - platform: gpio
+    pin:
+      number: 13
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    name: ${friendly_name} Relay Button CH3
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH3_relay
+
+  - platform: gpio
+    pin:
+      number: 0
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    name: ${friendly_name} Relay Button CH4
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH4_relay
+  
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 8
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    name: ${friendly_name} Relay Button CH5
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH5_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 9
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    name: ${friendly_name} Relay Button CH6
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH6_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 10
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    name: ${friendly_name} Relay Button CH7
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH7_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 11
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    name: ${friendly_name} Relay Button CH8
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH8_relay
+
+  # External Buttons for all 8 channels using GPIO emulation from MCP23017
+  - platform: gpio
+    pin:
+      number: 18
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    name: ${friendly_name} Ext Relay Button CH1
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH1_relay
+
+  - platform: gpio
+    pin:
+      number: 19
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    name: ${friendly_name} Ext Relay Button CH2
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH2_relay
+
+  - platform: gpio
+    pin:
+      number: 20
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    name: ${friendly_name} Ext Relay Button CH3
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH3_relay
+
+  - platform: gpio
+    pin:
+      number: 21
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    name: ${friendly_name} Ext Relay Button CH4
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH4_relay
+  
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 12
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    name: ${friendly_name} Ext Relay Button CH5
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH5_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 13
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    name: ${friendly_name} Ext Relay Button CH6
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH6_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 14
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    name: ${friendly_name} Ext Relay Button CH7
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH7_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 15
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    name: ${friendly_name} Ext Relay Button CH8
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH8_relay
+
+sensor:
+  # INA3221 sensors for all channels
+  - platform: ina3221
+    i2c_id: i2c_internal
+    address: 0x40
+    update_interval: 1s
+
+    channel_1:
+      shunt_resistance: 0.005 ohm
+      current:
+        name: ${friendly_name} CH1 Current
+        id: current1
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} CH1 Power
+        id: power1
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} CH1 Bus Voltage
+        id: voltage1
+        filters:
+          - delta: ${voltage_delta}
+
+    channel_2:
+      shunt_resistance: 0.005 ohm
+      current:
+        name: ${friendly_name} CH2 Current
+        id: current2
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} CH2 Power
+        id: power2
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} CH2 Bus Voltage
+        id: voltage2
+        filters:
+          - delta: ${voltage_delta}
+
+    channel_3:
+      shunt_resistance: 0.005 ohm
+      current:
+        name: ${friendly_name} CH3 Current
+        id: current3
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} CH3 Power
+        id: power3
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} CH3 Bus Voltage
+        id: voltage3
+        filters:
+          - delta: ${voltage_delta}
+
+  - platform: ina3221
+    i2c_id: i2c_internal
+    address: 0x41
+    update_interval: 1s
+
+    channel_1:
+      shunt_resistance: 0.005 ohm
+      current:
+        name: ${friendly_name} CH4 Current
+        id: current4
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} CH4 Power
+        id: power4
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} CH4 Bus Voltage
+        id: voltage4
+        filters:
+          - delta: ${voltage_delta}
+
+    channel_2:
+      shunt_resistance: 0.005 ohm
+      current:
+        name: ${friendly_name} CH5 Current
+        id: current5
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} CH5 Power
+        id: power5
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} CH5 Bus Voltage
+        id: voltage5
+        filters:
+          - delta: ${voltage_delta}
+
+    channel_3:
+      shunt_resistance: 0.005 ohm
+      current:
+        name: ${friendly_name} CH6 Current
+        id: current6
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} CH6 Power
+        id: power6
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} CH6 Bus Voltage
+        id: voltage6
+        filters:
+          - delta: ${voltage_delta}
+
+  - platform: ina3221
+    i2c_id: i2c_internal
+    address: 0x42
+    update_interval: 1s
+
+    channel_1:
+      shunt_resistance: 0.005 ohm
+      current:
+        name: ${friendly_name} CH7 Current
+        id: current7
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} CH7 Power
+        id: power7
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} CH7 Bus Voltage
+        id: voltage7
+        filters:
+          - delta: ${voltage_delta}
+
+    channel_2:
+      shunt_resistance: 0.005 ohm
+      current:
+        name: ${friendly_name} CH8 Current
+        id: current8
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} CH8 Power
+        id: power8
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} CH8 Bus Voltage
+        id: voltage8
+        filters:
+          - delta: ${voltage_delta}
+
+    channel_3:
+      shunt_resistance: 0.075 ohm
+      current:
+        name: ${friendly_name} Board Current
+        id: current9
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} Board Power
+        id: power9
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} Board Bus Voltage
+        id: voltage9
+        filters:
+          - delta: ${voltage_delta}
+
+  # MPU6050 sensors with default address
+  - platform: mpu6050
+    i2c_id: i2c_internal
+    update_interval: 1s
+    address: 0x68
+    accel_x:
+      name: "MPU6050 Accel X"
+    accel_y:
+      name: "MPU6050 Accel Y"
+    accel_z:
+      name: "MPU6050 Accel z"
+    gyro_x:
+      name: "MPU6050 Gyro X"
+    gyro_y:
+      name: "MPU6050 Gyro Y"
+    gyro_z:
+      name: "MPU6050 Gyro z"
+    temperature:
+      name: "MPU6050 Temperature"

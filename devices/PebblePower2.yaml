@@ -1,0 +1,156 @@
+switch:
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      number: 22
+      mode: 
+        output: true
+      inverted: false
+    id: CH1_relay
+    name: ${friendly_name} ${CH1_name}
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON
+  
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      number: 23
+      mode: 
+        output: true
+      inverted: false
+    id: CH2_relay
+    name: ${friendly_name} ${CH2_name}
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON
+
+
+binary_sensor:
+  # Board Buttons Defintions
+  # The default reuses the Channel Names however you can set unique names by flipping the comments on
+  # then "name" lines for each button and set the names in the "Board Configuration" section of this code
+  - platform: gpio
+    pin:
+      number: 8
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH1_button_name}
+    name: ${friendly_name} ${CH1_name} Button
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH1_relay
+
+  - platform: gpio
+    pin:
+      number: 10
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH2_button_name}
+    name: ${friendly_name} ${CH2_name} Button
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH2_relay
+
+  ### External Buttons
+  # External Buttons for all channels using GPIO emulation from MCP23017
+  - platform: gpio
+    pin:
+      number: 18
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH1_ext_name}
+    name: ${friendly_name} ${CH1_name} Ext
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH1_relay
+
+  - platform: gpio
+    pin:
+      number: 19
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH2_ext_name}
+    name: ${friendly_name} ${CH2_name} Ext
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH2_relay
+  
+
+sensor:
+  - platform: ina3221
+    i2c_id: i2c_internal
+    address: 0x40
+    update_interval: 1s
+
+    # CH 1
+    channel_1:
+      shunt_resistance: 0.015 ohm
+      current:
+        name: ${friendly_name} ${CH1_name} Current
+        id: current1
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} ${CH1_name} Power
+        id: power1
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} ${CH1_name} Bus Voltage
+        id: voltage1
+        filters:
+          - delta: ${voltage_delta}
+
+    # CH 2
+    channel_2:
+      shunt_resistance: 0.015 ohm
+      current:
+        name: ${friendly_name} ${CH2_name} Current
+        id: current2
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} ${CH2_name} Power
+        id: power2
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} ${CH2_name} Bus Voltage
+        id: voltage2
+        filters:
+          - delta: ${voltage_delta}
+
+    # Board
+    channel_3:
+      shunt_resistance: 0.150 ohm
+      current:
+        name: ${friendly_name} Board Current
+        id: current0
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} Board Power
+        id: power0
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} Board Bus Voltage
+        id: voltage0
+        filters:
+          - delta: ${voltage_delta}
+    

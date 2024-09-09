@@ -1,0 +1,66 @@
+# This is the PebblePower ESPHome code base and is structured such that common elements 
+# remain consistant and device specific content uses sequenced packages and includes to get
+# the target code for the device being deployed.
+
+# Please manage the commented lines below based on the device and or modules
+# you are configuring for your PebblePower device.
+
+
+##############################
+# Board Configuration Section
+##############################
+substitutions:
+  # These labels can be changed to anything you like and are reused through the code
+  device_name: pebblepower4
+  friendly_name: PebblePower4
+
+  # This is very important and the whole firmware will not work if this is not set correctly. 
+  # Please set as one of the following: PebblePower1, PebblePower2, PebblePower4, PebblePower8, PebblePower12
+  device_type: PebblePower4
+
+  # ESPHome doesn't allow for dynamic MQTT topics and so if you want to uniquely identify your 
+  # device you can add the unique MAC id below. You can discover your boards MAC using "esptool.py flash_id"
+  # to install esptool us "pip install esptool"
+  mac: 41d4ec
+
+  # MQTT Broker
+  mqtt_broker: 192.168.1.85
+
+
+  ### Define Relay Channel Names
+  # These labels can be changed to anything you like and are reused through the code
+  CH1_name: Fridge
+  CH2_name: Ceiling Lights
+  CH3_name: Bathroom Lights
+  CH4_name: Media
+  # CH5_name: CH5
+  # CH6_name: CH6
+  # CH7_name: CH7
+  # CH8_name: CH8
+  # CH9_name: CH9
+  # CH10_name: CH10
+  # CH11_name: CH11
+  # CH12_name: CH12
+
+packages:
+  common: !include common/common.yaml
+
+  # Please update the <X> below with your PebblePower device type. 
+  PebblePower: !include devices/PebblePower<X>.yaml
+  
+  # Please comment out this line if you are not using MQTT
+  mqtt: !include common/mqtt.yaml
+
+  # Please comment out this line if you are not using Home Assistant. It's important to remove if not
+  # using home assistant as it will cause the device to reboot every 15 minutues if it can't connect to Home Assistant
+  homeassistant: !include common/homeassistant.yaml
+
+  # Some sensor code overwrites common code for items such as function button presses and therefore should 
+  # always be the last packages to be loaded. 
+  # Uncomment the lines below to enable your connected sensors.
+
+  # Gyro: !include sensors/Gyro_MPU6050.yaml
+
+
+
+

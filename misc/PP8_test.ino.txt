@@ -1,0 +1,390 @@
+int ch1Voltage = 0;
+int ch2Voltage = 0;
+int ch3Voltage = 0;
+int ch4Voltage = 0;
+int ch5Voltage = 0;
+int ch6Voltage = 0;
+int ch7Voltage = 0;
+int ch8Voltage = 0;
+
+//INA3221 
+#include <INA3221.h>
+// Set I2C address to 0x41 (A0 pin -> VCC)
+INA3221 ina_0(INA3221_ADDR40_GND);
+INA3221 ina_1(INA3221_ADDR41_VCC);
+INA3221 ina_2(INA3221_ADDR42_SDA);
+void current_measure_init() 
+{   ina_0.begin(&Wire);
+    ina_0.reset();
+    ina_0.setShuntRes(5,5, 5);
+    ina_1.begin(&Wire);
+    ina_1.reset();
+    ina_1.setShuntRes(5, 5, 5);
+    ina_2.begin(&Wire);
+    ina_2.reset();
+    ina_2.setShuntRes(5, 5, 75);}
+
+//NEOPIXEL 
+#include <Adafruit_NeoPixel.h>
+#ifdef __AVR__
+ #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
+#endif
+#define PIN        4 // On Trinket or Gemma, suggest changing this to 1
+#define NUMPIXELS 9 // Popular NeoPixel ring size
+Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+
+//MCP23017 
+#include <Adafruit_MCP23X08.h>
+#include <Adafruit_MCP23X17.h>
+Adafruit_MCP23X17 mcp;
+//Expanded GPIO
+#define Relay5 0
+#define Relay6 1
+#define Relay7 2
+#define Relay8 3
+#define Button5 8
+#define Button6 9
+#define Button7 10
+#define Button8 11
+#define Ext_Button5 12
+#define Ext_Button6 13
+#define Ext_Button7 14
+#define Ext_Button8 15
+
+//ESP GPIO
+#define Relay1 22
+#define Relay2 23
+#define Relay3 15 
+#define Relay4 1 
+#define Button1 8
+#define Button2 10
+#define Button3 13
+#define Button4 0
+#define Ext_Button1 18
+#define Ext_Button2 19
+#define Ext_Button3 20
+#define Ext_Button4 21
+
+void setup() {
+  // put your setup code here, to run once:
+
+
+
+  //NEOPIXEL
+
+  #if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
+  clock_prescale_set(clock_div_1);
+#endif
+  pixels.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)
+   
+     
+      for(int i=0; i<NUMPIXELS; i++) 
+      {pixels.setPixelColor(i, pixels.Color(0, 40, 0));
+      pixels.show();
+      delay(250);}
+      pixels.setPixelColor(0, pixels.Color(0,0, 0));
+      pixels.setPixelColor(1, pixels.Color(0,0, 0));
+      pixels.setPixelColor(2, pixels.Color(0,0, 0));
+      pixels.setPixelColor(3, pixels.Color(0,0, 0));
+      pixels.setPixelColor(4, pixels.Color(0,0, 0));
+      pixels.setPixelColor(5, pixels.Color(0,0, 0));
+      pixels.setPixelColor(6, pixels.Color(0,0, 0));
+      pixels.setPixelColor(7, pixels.Color(0,0, 0));
+      pixels.show();   // Send the updated pixel colors to the hardware.
+
+
+//MCP23017 add
+
+   Wire.begin(2,3);
+  if (!mcp.begin_I2C()) {
+  //if (!mcp.begin_SPI(CS_PIN)) {
+    Serial.println("Error.");
+    while (1);
+  }else{
+    Serial.println("No Error");
+  } 
+  
+//INA3221
+  current_measure_init();
+//    while (!Serial) 
+//    {delay(1);}
+
+  pinMode(Relay1, OUTPUT);
+  pinMode(Relay2, OUTPUT);
+  pinMode(Relay3, OUTPUT);
+  pinMode(Relay4, OUTPUT);
+  mcp.pinMode(Relay5, OUTPUT);
+  mcp.pinMode(Relay6, OUTPUT);
+  mcp.pinMode(Relay7, OUTPUT);
+  mcp.pinMode(Relay8, OUTPUT);
+  pinMode(Button1, INPUT_PULLUP);
+  pinMode(Button2, INPUT_PULLUP);
+  pinMode(Button3, INPUT_PULLUP);
+  pinMode(Button4, INPUT_PULLUP);
+  mcp.pinMode(Button5, INPUT_PULLUP);
+  mcp.pinMode(Button6, INPUT_PULLUP);
+  mcp.pinMode(Button7, INPUT_PULLUP);
+  mcp.pinMode(Button8, INPUT_PULLUP);
+  pinMode(Ext_Button1, INPUT_PULLUP);
+  pinMode(Ext_Button2, INPUT_PULLUP);
+  pinMode(Ext_Button3, INPUT_PULLUP);
+  pinMode(Ext_Button4, INPUT_PULLUP);
+  mcp.pinMode(Ext_Button5, INPUT_PULLUP);
+  mcp.pinMode(Ext_Button6, INPUT_PULLUP);
+  mcp.pinMode(Ext_Button7, INPUT_PULLUP);
+  mcp.pinMode(Ext_Button8, INPUT_PULLUP);
+  Serial.begin(115200);
+  digitalWrite(Relay1,LOW);
+  digitalWrite(Relay2,LOW);
+  digitalWrite(Relay3,LOW);
+  digitalWrite(Relay4,LOW);
+  mcp.digitalWrite(Relay5,LOW);
+  mcp.digitalWrite(Relay6,LOW);
+  mcp.digitalWrite(Relay7,LOW);
+  mcp.digitalWrite(Relay8,LOW);
+}
+
+void buttons_led(){
+    static unsigned long lastchange = 0;
+  static int state = 0;   
+  // put your main code here, to run repeatedly:
+
+    test(ch1Voltage,Button1,Relay1,Ext_Button1,0);
+    test(ch2Voltage,Button2,Relay2,Ext_Button2,1);
+    test(ch3Voltage,Button3,Relay3,Ext_Button3,2);
+    test(ch4Voltage,Button4,Relay4,Ext_Button4,3);
+mcp_test(ch5Voltage,Button5,Relay5,Ext_Button5,4);
+mcp_test(ch6Voltage,Button6,Relay6,Ext_Button6,5);
+mcp_test(ch7Voltage,Button7,Relay7,Ext_Button7,6);
+mcp_test(ch8Voltage,Button8,Relay8,Ext_Button8,7);
+if (millis()-lastchange>500)
+{
+  lastchange = millis();
+  if(state == 0)
+     {pixels.setPixelColor(8, pixels.Color(40,0,0));}
+  if(state == 1)
+     {pixels.setPixelColor(8, pixels.Color(0,40,0));}
+  if(state == 2)
+     {pixels.setPixelColor(8, pixels.Color(0,0,40));}
+  state = state + 1;
+    if(state >2)
+     {state = 0;}
+}
+
+pixels.show();
+}
+
+
+void loop() {
+
+  float sum = 0;
+  int i = 0;
+  Serial.print("Channel_1 > ");
+  for (i=0;i<10;i++){
+  sum = sum + ina_0.getCurrent(INA3221_CH1);
+  delay(10);}
+  
+  ch1Voltage = ina_0.getVoltage(INA3221_CH1);
+  Serial.print("Current: ");
+  Serial.print(sum/10);
+  Serial.print("A");
+  Serial.print("  Voltage: ");
+  Serial.print(ch1Voltage);
+  Serial.println("V"); 
+  
+  buttons_led();
+
+  sum = 0;
+  i = 0;
+  Serial.print("Channel_2 > ");
+  for (i=0;i<10;i++){
+  sum = sum + ina_0.getCurrent(INA3221_CH2);
+  delay(10);
+  }
+  ch2Voltage=ina_0.getVoltage(INA3221_CH2);
+  Serial.print("Current: ");
+  Serial.print(sum/10);
+  Serial.print("A");
+  Serial.print("  Voltage: ");
+  Serial.print(ch2Voltage);
+  Serial.println("V"); 
+
+  buttons_led();
+  
+    sum = 0;
+  i = 0;
+  Serial.print("Channel_3 > ");
+  for (i=0;i<10;i++){
+  sum = sum + ina_0.getCurrent(INA3221_CH3);
+  delay(10);
+  }
+  ch3Voltage = ina_0.getVoltage(INA3221_CH3);
+  Serial.print("Current: ");
+  Serial.print(sum/10);
+  Serial.print("A");
+  Serial.print("  Voltage: ");
+  Serial.print(ch3Voltage);
+  Serial.println("V"); 
+
+  buttons_led();
+  
+  
+  sum = 0;
+  i = 0;
+  Serial.print("Channel_4 > ");
+  for (i=0;i<10;i++){
+  sum = sum + ina_1.getCurrent(INA3221_CH1);
+  delay(10);
+  }
+  ch4Voltage = ina_1.getVoltage(INA3221_CH1);
+  Serial.print("Current: ");
+  Serial.print(sum/10);
+  Serial.print("A");
+  Serial.print("  Voltage: ");
+  Serial.print(ch4Voltage );
+  Serial.println("V"); 
+
+  buttons_led();
+
+
+  sum = 0;
+  i = 0;
+  Serial.print("Channel_5 > ");
+  for (i=0;i<10;i++){
+  sum = sum + ina_1.getCurrent(INA3221_CH2);
+  delay(10);
+  }
+  ch5Voltage=ina_1.getVoltage(INA3221_CH2);
+  Serial.print("Current: ");
+  Serial.print(sum/10);
+  Serial.print("A");
+  Serial.print("  Voltage: ");
+  Serial.print(ch5Voltage);
+  Serial.println("V"); 
+
+  buttons_led();
+
+
+  sum = 0;
+  i = 0;
+  Serial.print("Channel_6 > ");
+  for (i=0;i<10;i++){
+  sum = sum + ina_1.getCurrent(INA3221_CH3);
+  delay(10);
+  }
+  ch6Voltage= ina_1.getVoltage(INA3221_CH3);
+  Serial.print("Current: ");
+  Serial.print(sum/10);
+  Serial.print("A");
+  Serial.print("  Voltage: ");
+  Serial.print(ch6Voltage );
+  Serial.println("V"); 
+
+  buttons_led();
+
+  sum = 0;
+  i = 0;
+  Serial.print("Channel_7 > ");
+  for (i=0;i<10;i++){
+  sum = sum + ina_2.getCurrent(INA3221_CH1);
+  delay(10);
+  }
+  ch7Voltage=ina_2.getVoltage(INA3221_CH1);
+  Serial.print("Current: ");
+  Serial.print(sum/10);
+  Serial.print("A");
+  Serial.print("  Voltage: ");
+  Serial.print(ch7Voltage);
+  Serial.println("V"); 
+
+  buttons_led();
+
+  sum = 0;
+  i = 0;
+  Serial.print("Channel_8 > ");
+  for (i=0;i<10;i++){
+  sum = sum + ina_2.getCurrent(INA3221_CH2);
+  delay(10);
+  }
+  ch8Voltage=ina_2.getVoltage(INA3221_CH2);
+  Serial.print("Current: ");
+  Serial.print(sum/10);
+  Serial.print("A");
+  Serial.print("  Voltage: ");
+  Serial.print(ch8Voltage);
+  Serial.println("V"); 
+
+  buttons_led();
+  
+  sum = 0;
+  i = 0;
+  Serial.print("Board Pwr > ");
+  for (i=0;i<10;i++){
+  sum = sum + ina_2.getCurrent(INA3221_CH3);
+  delay(10);
+  }
+  Serial.print("Current: ");
+  Serial.print(sum/10);
+  Serial.print("A");
+  Serial.print("  Voltage: ");
+  Serial.print( ina_2.getVoltage(INA3221_CH3));
+  Serial.println("V"); 
+  Serial.println(""); 
+
+  buttons_led();
+
+}
+
+
+
+
+void test(int chVoltage,int button ,int relay,int ext_button,int led)
+{
+
+  if (chVoltage>=2)  
+ { 
+     if (!digitalRead(button))
+     {
+       digitalWrite(relay,HIGH);
+//       Serial.println("Relay 1 HIGH");
+           pixels.setPixelColor(led, pixels.Color(0,40, 0));
+     }
+     if (!digitalRead(ext_button))
+     {
+       digitalWrite(relay,LOW);
+//        Serial.println("Relay 1 LOW");
+          pixels.setPixelColor(led, pixels.Color(0,0, 0));
+     }
+ }
+ else
+ {
+  digitalWrite(relay,LOW);
+  pixels.setPixelColor(led, pixels.Color(40,0, 0));
+ }
+
+
+}
+
+void mcp_test(int chVoltage,int add_button ,int add_relay,int add_ext_button,int add_led)
+{
+if (chVoltage>=2)
+{
+  if (!mcp.digitalRead(add_button))
+  {
+    mcp.digitalWrite(add_relay,HIGH);
+//     Serial.println("Relay 1 HIGH");
+      pixels.setPixelColor(add_led, pixels.Color(0,40, 0));
+  }
+  if (!mcp.digitalRead(add_ext_button))
+  {
+    mcp.digitalWrite(add_relay,LOW);
+//      Serial.println("Relay 1 LOW");
+       pixels.setPixelColor(add_led, pixels.Color(0,0, 0));
+  }
+}
+ else
+ {
+  mcp.digitalWrite(add_relay,LOW);
+  pixels.setPixelColor(add_led, pixels.Color(40,0, 0));
+}
+}

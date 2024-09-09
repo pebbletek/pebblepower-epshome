@@ -1,0 +1,27 @@
+light:
+  # The LED's on the PP8 and above boards are individually programmable and this code monitors for the 
+  # states of relays and connectivity and updates the LED's accordingly.
+  # The LEDs are treated as an array of 9 LEDs and the "it[*]" field is the address of the 
+  # individual LED. 
+  - platform: esp32_rmt_led_strip
+    pin: 4
+    num_leds: 9
+    rmt_channel: 0
+    chipset: ws2812
+    name: "PebblePower LED Array"
+    rgb_order: GRB
+    id: led_array
+    effects:
+      - addressable_lambda:
+          name: "Relay Channel and WiFi Status Effect"
+          update_interval: 50ms
+          lambda: |-
+            if (id(CH1_relay).state) { it[0] = esphome::Color(0, 255, 0); } else { it[0] = esphome::Color(0, 0, 0); }
+            if (id(CH2_relay).state) { it[1] = esphome::Color(0, 255, 0); } else { it[1] = esphome::Color(0, 0, 0); }
+            if (id(CH3_relay).state) { it[2] = esphome::Color(0, 255, 0); } else { it[2] = esphome::Color(0, 0, 0); }
+            if (id(CH4_relay).state) { it[3] = esphome::Color(0, 255, 0); } else { it[3] = esphome::Color(0, 0, 0); }
+            if (id(CH5_relay).state) { it[4] = esphome::Color(0, 255, 0); } else { it[4] = esphome::Color(0, 0, 0); }
+            if (id(CH6_relay).state) { it[5] = esphome::Color(0, 255, 0); } else { it[5] = esphome::Color(0, 0, 0); }
+            if (id(CH7_relay).state) { it[6] = esphome::Color(0, 255, 0); } else { it[6] = esphome::Color(0, 0, 0); }
+            if (id(CH8_relay).state) { it[7] = esphome::Color(0, 255, 0); } else { it[7] = esphome::Color(0, 0, 0); }
+            if (id(wifi_component).is_connected()) { it[8] = esphome::Color(0, 0, 255); } else { it[8] = esphome::Color(255, 0, 0); }

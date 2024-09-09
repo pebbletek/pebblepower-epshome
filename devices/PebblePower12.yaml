@@ -1,0 +1,826 @@
+# PebblePower 8 Channel Relay Controller is where the architecture in the PebblePower range starts to change.
+# We expand the number of GPIO pins using mcp23017 I2C expanders. These expanders use the I2C internal bus I2C1.
+
+# This file and its definitions are also used by the PebblePower12 device and so please dont make any changes here.
+# Best practise is to make any chnages to device specific files rather than these includes. Any changes you do make
+# will be overwritten when updating in the future.
+
+packages:
+  pp8_lights: !include ../features/pp12_lights.yaml
+
+esphome:
+
+  on_boot:
+    priority: -100
+    then:
+      - light.turn_on:
+          id: led_array
+          brightness: 25%
+          effect: "Relay Channel and WiFi Status Effect"
+
+mcp23017:
+  - id: 'mcp23017_hub'
+    i2c_id: i2c_internal
+    address: 0x20
+
+  - id: 'mcp23017_hub2'
+    i2c_id: i2c_internal
+    address: 0x21
+
+
+switch:
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      number: 22
+      mode: 
+        output: true
+      inverted: false
+    id: CH1_relay
+    name: ${friendly_name} ${CH1_name}
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON
+  
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      number: 23
+      mode: 
+        output: true
+      inverted: false
+    id: CH2_relay
+    name: ${friendly_name} ${CH2_name}
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON
+
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      number: 15
+      mode: 
+        output: true
+      inverted: false
+    id: CH3_relay
+    name: ${friendly_name} ${CH3_name}
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON
+
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      number: 1
+      mode: 
+        output: true
+      inverted: false
+    id: CH4_relay
+    name: ${friendly_name} ${CH4_name}
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON
+
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 0
+      mode: 
+        output: true
+      inverted: false
+    id: CH5_relay
+    name: ${friendly_name} ${CH5_name}
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON
+
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 1
+      mode: 
+        output: true
+      inverted: false
+    id: CH6_relay
+    name: ${friendly_name} ${CH6_name}
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON
+
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 2
+      mode: 
+        output: true
+      inverted: false
+    id: CH7_relay
+    name: ${friendly_name} ${CH7_name}
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON
+
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 3
+      mode: 
+        output: true
+      inverted: false
+    id: CH8_relay
+    name: ${friendly_name} ${CH8_name}
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON
+
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      mcp23xxx: mcp23017_hub2
+      number: 0
+      mode: 
+        output: true
+      inverted: false
+    id: CH9_relay
+    name: ${friendly_name} ${CH9_name}
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON
+
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      mcp23xxx: mcp23017_hub2
+      number: 1
+      mode: 
+        output: true
+      inverted: false
+    id: CH10_relay
+    name: ${friendly_name} ${CH10_name}
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON
+
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      mcp23xxx: mcp23017_hub2
+      number: 2
+      mode: 
+        output: true
+      inverted: false
+    id: CH11_relay
+    name: ${friendly_name} ${CH11_name}
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON
+
+  - platform: gpio
+    setup_priority: 600
+    pin:
+      mcp23xxx: mcp23017_hub2
+      number: 3
+      mode: 
+        output: true
+      inverted: false
+    id: CH12_relay
+    name: ${friendly_name} ${CH12_name}
+    icon: "mdi:electric-switch"
+    restore_mode: RESTORE_DEFAULT_ON
+
+
+binary_sensor:
+  # Board Buttons Defintions
+  # The default reuses the Channel Names however you can set unique names by flipping the comments on
+  # then "name" lines for each button and set the names in the "Board Configuration" section of this code
+  - platform: gpio
+    pin:
+      number: 8
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH1_button_name}
+    name: ${friendly_name} ${CH1_name} Button
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH1_relay
+
+  - platform: gpio
+    pin:
+      number: 10
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH2_button_name}
+    name: ${friendly_name} ${CH2_name} Button
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH2_relay
+
+  - platform: gpio
+    pin:
+      number: 13
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+      # name: ${friendly_name} ${CH3_button_name}
+    name: ${friendly_name} ${CH3_name} Button
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH3_relay
+
+  - platform: gpio
+    pin:
+      number: 0
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+      # name: ${friendly_name} ${CH4_button_name}
+    name: ${friendly_name} ${CH4_name} Button
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH4_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 8
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH5_button_name}
+    name: ${friendly_name} ${CH5_name} Button
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH5_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 9
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH6_button_name}
+    name: ${friendly_name} ${CH6_name} Button
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH6_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 10
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH7_button_name}
+    name: ${friendly_name} ${CH7_name} Button
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH7_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 11
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH8_button_name}
+    name: ${friendly_name} ${CH8_name} Button
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH8_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub2
+      number: 8
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH9_button_name}
+    name: ${friendly_name} ${CH9_name} Button
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH9_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub2
+      number: 9
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH10_button_name}
+    name: ${friendly_name} ${CH10_name} Button
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH10_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub2
+      number: 10
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH11_button_name}
+    name: ${friendly_name} ${CH11_name} Button
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH11_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub2
+      number: 11
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH12_button_name}
+    name: ${friendly_name} ${CH12_name} Button
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH12_relay
+
+  ### External Buttons
+  # External Buttons for all channels using GPIO emulation from MCP23017
+  - platform: gpio
+    pin:
+      number: 18
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH1_ext_name}
+    name: ${friendly_name} ${CH1_name} Ext
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH1_relay
+
+  - platform: gpio
+    pin:
+      number: 19
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH2_ext_name}
+    name: ${friendly_name} ${CH2_name} Ext
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH2_relay
+
+  - platform: gpio
+    pin:
+      number: 20
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH3_ext_name}
+    name: ${friendly_name} ${CH3_name} Ext
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH3_relay
+
+  - platform: gpio
+    pin:
+      number: 21
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH4_ext_name}
+    name: ${friendly_name} ${CH4_name} Ext
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH4_relay
+  
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 12
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH5_ext_name}
+    name: ${friendly_name} ${CH5_name} Ext
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH5_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 13
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH6_ext_name}
+    name: ${friendly_name} ${CH6_name} Ext
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH6_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 14
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH7_ext_name}
+    name: ${friendly_name} ${CH7_name} Ext
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH7_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub
+      number: 15
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH8_ext_name}
+    name: ${friendly_name} ${CH8_name} Ext
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH8_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub2
+      number: 12
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH9_ext_name}
+    name: ${friendly_name} ${CH9_name} Ext
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH9_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub2
+      number: 13
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH10_ext_name}
+    name: ${friendly_name} ${CH10_name} Ext
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH10_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub2
+      number: 14
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH11_ext_name}
+    name: ${friendly_name} ${CH11_name} Ext
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH11_relay
+
+  - platform: gpio
+    pin:
+      mcp23xxx: mcp23017_hub2
+      number: 15
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    # name: ${friendly_name} ${CH12_ext_name}
+    name: ${friendly_name} ${CH12_name} Ext
+    filters:
+      - delayed_on: ${debounce_time}
+      - delayed_off: ${debounce_time}
+    on_press:
+      - switch.toggle: CH12_relay
+
+sensor:
+  - platform: ina3221
+    i2c_id: i2c_internal
+    address: 0x40
+    update_interval: 1s
+    channel_1:
+      shunt_resistance: 0.005 ohm
+      current:
+        name: ${friendly_name} ${CH1_name} Current
+        id: current1
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} ${CH1_name} Power
+        id: power1
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} ${CH1_name} Bus Voltage
+        id: voltage1
+        filters:
+          - delta: ${voltage_delta}
+
+    channel_2:
+      shunt_resistance: 0.005 ohm
+      current:
+        name: ${friendly_name} ${CH2_name} Current
+        id: current2
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} ${CH2_name} Power
+        id: power2
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} ${CH2_name} Bus Voltage
+        id: voltage2
+        filters:
+          - delta: ${voltage_delta}
+
+    channel_3:
+      shunt_resistance: 0.005 ohm
+      current:
+        name: ${friendly_name} ${CH3_name} Current
+        id: current3
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} ${CH3_name} Power
+        id: power3
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} ${CH3_name} Bus Voltage
+        id: voltage3
+        filters:
+          - delta: ${voltage_delta}
+
+  - platform: ina3221
+    i2c_id: i2c_internal
+    address: 0x41
+    update_interval: 1s
+    channel_1:
+      shunt_resistance: 0.005 ohm
+      current:
+        name: ${friendly_name} ${CH4_name} Current
+        id: current4
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} ${CH4_name} Power
+        id: power4
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} ${CH4_name} Bus Voltage
+        id: voltage4
+        filters:
+          - delta: ${voltage_delta}
+
+    channel_2:
+      shunt_resistance: 0.005 ohm
+      current:
+        name: ${friendly_name} ${CH5_name} Current
+        id: current5
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} ${CH5_name} Power
+        id: power5
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} ${CH5_name} Bus Voltage
+        id: voltage5
+        filters:
+          - delta: ${voltage_delta}
+
+    channel_3:
+      shunt_resistance: 0.005 ohm
+      current:
+        name: ${friendly_name} ${CH6_name} Current
+        id: current6
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} ${CH6_name} Power
+        id: power6
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} ${CH6_name} Bus Voltage
+        id: voltage6
+        filters:
+          - delta: ${voltage_delta}
+
+  - platform: ina3221
+    i2c_id: i2c_internal
+    address: 0x42
+    update_interval: 1s
+    channel_1:
+      shunt_resistance: 0.005 ohm
+      current:
+        name: ${friendly_name} ${CH7_name} Current
+        id: current7
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} ${CH7_name} Power
+        id: power7
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} ${CH7_name} Bus Voltage
+        id: voltage7
+        filters:
+          - delta: ${voltage_delta}
+
+    channel_2:
+      shunt_resistance: 0.005 ohm
+      current:
+        name: ${friendly_name} ${CH8_name} Current
+        id: current8
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} ${CH8_name} Power
+        id: power8
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} ${CH8_name} Bus Voltage
+        id: voltage8
+        filters:
+          - delta: ${voltage_delta}
+
+    channel_3:
+      shunt_resistance: 0.005 ohm
+      current:
+        name: ${friendly_name} ${CH9_name} Current
+        id: current9
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} ${CH9_name} Power
+        id: power9
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} ${CH9_name} Bus Voltage
+        id: voltage9
+        filters:
+          - delta: ${voltage_delta}
+
+
+
+  - platform: ina3221
+    i2c_id: i2c_internal
+    address: 0x43
+    update_interval: 1s
+    channel_1:
+      shunt_resistance: 0.005 ohm
+      current:
+        name: ${friendly_name} ${CH10_name} Current
+        id: current10
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} ${CH10_name} Power
+        id: power10
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} ${CH10_name} Bus Voltage
+        id: voltage10
+        filters:
+          - delta: ${voltage_delta}
+
+    channel_2:
+      shunt_resistance: 0.005 ohm
+      current:
+        name: ${friendly_name} ${CH11_name} Current
+        id: current11
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} ${CH11_name} Power
+        id: power11
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} ${CH11_name} Bus Voltage
+        id: voltage11
+        filters:
+          - delta: ${voltage_delta}
+
+    channel_3:
+      shunt_resistance: 0.005 ohm
+      current:
+        name: ${friendly_name} ${CH12_name} Current
+        id: current12
+        filters:
+          - delta: ${current_delta}
+      power:
+        name: ${friendly_name} ${CH12_name} Power
+        id: power12
+        filters:
+          - delta: ${power_delta}
+      bus_voltage:
+        name: ${friendly_name} ${CH12_name} Bus Voltage
+        id: voltage12
+        filters:
+          - delta: ${voltage_delta}
+
+  - platform: ina219
+    i2c_id: i2c_internal
+    address: 0x44
+    update_interval: 1s
+    shunt_resistance: 0.075 ohm
+    current:
+      name: ${friendly_name} Board Current
+      id: current0
+      filters:
+        - delta: ${current_delta}
+    power:
+      name: ${friendly_name} Board Power
+      id: power0
+      filters:
+        - delta: ${power_delta}
+    bus_voltage:
+      name: ${friendly_name} Board Bus Voltage
+      id: voltage0
+      filters:
+        - delta: ${voltage_delta}
+
+
+
+
+

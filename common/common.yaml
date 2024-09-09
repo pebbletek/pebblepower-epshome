@@ -1,0 +1,140 @@
+# This is the common settings file for all PebblePower devices.
+# It is included in each device yaml file to provide the common settings.
+
+# Please don't make chnages here, instead make changes in the device specific files.
+# The only time you should make changes here is if you know what you are doing and
+# want to apply the change to all devices. Changes here maybe overwritten when new
+# versions of the code are installed, which is why changes in the device specific
+# files will overwrite changes here.
+
+
+substitutions:
+  # Whilst you can alter these to manage what and when metics are updated, its not
+  # "recommended" to change anything here as these settings have been optimised for 
+  # default use cases and other configured options throughout this code.
+  current_delta: "0.01"
+  power_delta: "0.1"
+  voltage_delta: "0.1"
+  debounce_time: "50ms"
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  name_add_mac_suffix: true
+  project:
+    name: "PebbleTek.PebblePower"
+    version: "1.0.0"
+
+# This is the ESP32 C6 configuration that is used for all devices.
+# This work with either 4MB or 8MB flash sizes and we haven't found a usecase 
+# where the 8MB flash size is required. If you need to change this then you
+# should change the flash_size in the device specific yaml file.
+esp32:
+  board: "esp32-c6-devkitc-1"
+  variant: "ESP32C6"
+  flash_size: 4MB
+  framework:
+    platform_version: 6.6.0
+    sdkconfig_options:
+      CONFIG_ESPTOOLPY_FLASHSIZE_4MB: y
+      CONFIG_OPENTHREAD_ENABLED: n
+      CONFIG_ENABLE_WIFI_STATION: y
+      CONFIG_USE_MINIMAL_MDNS: y1
+
+    type: esp-idf
+    version: 5.2.1
+
+
+# The default logger level is INFO, which is the probably the best level for most users.
+# This can be changed to DEBUG if you want to see more detailed information and please do this in 
+# the device specific yaml file.
+logger:
+  level: INFO
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  id: wifi_component
+  ap:
+    ssid: ${device_name}
+    password: !secret ap_password
+
+captive_portal:
+
+web_server:
+  port: 80
+  version: 2
+
+# time:
+#   - platform: homeassistant
+#     id: homeassistant_time
+
+# I2C buses are used for sensors and onboard GPIO expansion.
+# This needs validating with all flavours of PebblePower. Its currently test with PP4 and PP8.
+i2c:
+  - id: i2c_internal
+    sda: 2
+    scl: 3
+    scan: true
+  - id: i2c_external
+    sda: 6
+    scl: 7
+    scan: true
+
+binary_sensor:
+# Function Button (FUNC) with double press to trigger calibration
+  - platform: gpio
+    pin:
+      number: 5
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    name: "${friendly_name} Function Button"
+    id: func_button
+    filters:
+      - delayed_on_off: 80ms # Debounce filter to eliminate random false switching
+    on_multi_click:
+      - timing:
+          - ON for at most 0.5s
+          - OFF for at least 0.5s
+        then:
+          - logger.log: "Single Click Detected"
+          - lambda: |-
+              id(template_sensor_1).publish_state(!id(template_sensor_1).state);
+
+      - timing:
+          - ON for at most 0.5s
+          - OFF for at most 0.5s
+          - ON for at most 0.5s
+          - OFF for at least 0.5s
+        then:
+          - logger.log: "Double Click Detected - Starting Calibration"
+          - lambda: |-
+              id(template_sensor_2).publish_state(!id(template_sensor_2).state);
+
+      - timing:
+          - ON for at most 0.5s
+          - OFF for at most 0.5s
+          - ON for at most 0.5s
+          - OFF for at most 0.5s
+          - ON for at most 0.5s
+          - OFF for at least 0.2s
+        then:
+          - logger.log: "Triple Click Detected"
+          - lambda: |-
+              id(template_sensor_3).publish_state(!id(template_sensor_3).state);
+
+  - platform: template
+    name: "Function 1 ${friendly_name}"
+    id: template_sensor_1
+  - platform: template
+    name: "Function 2 ${friendly_name}"
+    id: template_sensor_2
+  - platform: template
+    name: "Function 3 ${friendly_name}"
+    id: template_sensor_3

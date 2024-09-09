@@ -1,0 +1,5 @@
+# If not being used with Home Assistant, the API section should be commented out
+# else the board will reboot every 15 mins trying to connect to Home Assistant
+api:
+  encryption:
+    key: !secret api_key
